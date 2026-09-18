@@ -57,9 +57,10 @@ export function createGrokHistorySource(options: GrokHistoryOptions = {}): Provi
                   chatStat?.birthtimeMs ?? updatesStat?.birthtimeMs ?? updatedAt,
                 ),
                 updatedAt,
-                revision: [summaryStat, updatesStat, chatStat]
+                // Prefix invalidates cached imports after user-text unwrapping changed.
+                revision: `visible-user-v1|${[summaryStat, updatesStat, chatStat]
                   .map((s) => (s ? `${s.size}:${s.mtimeMs}` : '-'))
-                  .join('|'),
+                  .join('|')}`,
                 locator: directory,
                 ...(summary.archived === true ? { archived: true } : {}),
               } satisfies ProviderHistorySession

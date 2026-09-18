@@ -166,6 +166,7 @@ class Replay {
       this.#activeText = item
     }
     item.text = (item.text ?? '') + parsed.text
+    if (role === 'user' && item.text) item.text = grokVisibleUserText(item.text)
     if (parsed.attachments.length)
       item.attachments = [...(item.attachments ?? []), ...parsed.attachments]
     if (role === 'assistant') this.#responded = true
@@ -323,6 +324,22 @@ class Replay {
     this.hasItems = true
     return item
   }
+}
+
+/** TasteCode prefixes session instructions on the first Grok prompt, and Grok
+ *  wraps that prompt in `<user_query>` in model history. Strip both so the
+ *  transcript shows what the user typed. */
+export function grokVisibleUserText(value: string): string {
+  let text = value
+  if (text.startsWith('<user_query>\n') && text.endsWith('\n</user_query>')) {
+    text = text.slice('<user_query>\n'.length, -'\n</user_query>'.length)
+  }
+  if (text.startsWith('<system-instructions>\n')) {
+    const marker = '\n</system-instructions>\n\n'
+    const end = text.indexOf(marker)
+    if (end !== -1) text = text.slice(end + marker.length)
+  }
+  return text
 }
 
 function contentParts(value: unknown): ContentParts {
