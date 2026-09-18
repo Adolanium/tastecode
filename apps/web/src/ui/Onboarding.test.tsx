@@ -18,6 +18,12 @@ const grokMissing: ProviderStatus = {
   installed: false,
   auth: 'unauthenticated',
 }
+const hermesMissing: ProviderStatus = {
+  id: 'hermes',
+  displayName: 'Hermes',
+  installed: false,
+  auth: 'unauthenticated',
+}
 
 type Props = Parameters<typeof Onboarding>[0]
 
@@ -26,7 +32,7 @@ function onboardingProps(overrides: Partial<Props> = {}): Props {
     themePreference: 'system',
     onThemePreferenceChange: vi.fn(),
     onDisplayNameChange: vi.fn(),
-    providerStatuses: [codexReady, grokMissing],
+    providerStatuses: [codexReady, grokMissing, hermesMissing],
     onAddProject: vi.fn(),
     onOpenProviders: vi.fn(),
     onDismiss: vi.fn(),
@@ -83,22 +89,23 @@ describe('first-run onboarding', () => {
     expect(props.onDismiss).toHaveBeenCalledOnce()
   })
 
-  it('covers exactly the three beta plans and routes setup into provider settings', () => {
+  it('covers exactly the listed beta plans and routes setup into provider settings', () => {
     const props = renderOnboarding()
     fireEvent.click(screen.getByRole('button', { name: /^Begin setup/ }))
     next()
     next()
 
     const plans = screen.getByRole('list', { name: 'Supported beta plans' })
-    expect(plans.querySelectorAll('.onboarding__provider')).toHaveLength(3)
+    expect(plans.querySelectorAll('.onboarding__provider')).toHaveLength(4)
     expect(plans.textContent).toContain('CodexOpenAIReady')
     expect(plans.textContent).toContain('Claude CodeAnthropicChecking…')
     expect(plans.textContent).toContain('GrokxAINot installedSet up')
+    expect(plans.textContent).toContain('HermesNous ResearchNot installedSet up')
     expect(screen.getByRole('status').textContent).toContain('Looking for the coding agents')
 
     // Only the row that needs something offers the action; ready and
     // still-checking rows stay plain text.
-    expect(screen.getAllByRole('button', { name: /^Set up / })).toHaveLength(1)
+    expect(screen.getAllByRole('button', { name: /^Set up / })).toHaveLength(2)
     fireEvent.click(screen.getByRole('button', { name: 'Set up Grok' }))
     expect(props.onOpenProviders).toHaveBeenCalledOnce()
   })
@@ -109,13 +116,14 @@ describe('first-run onboarding', () => {
         codexReady,
         { ...codexReady, id: 'claude-code', displayName: 'Claude Code' },
         { ...codexReady, id: 'grok', displayName: 'Grok', auth: 'unknown' },
+        { ...codexReady, id: 'hermes', displayName: 'Hermes', auth: 'unknown' },
       ],
     })
     fireEvent.click(screen.getByRole('button', { name: /^Begin setup/ }))
     next()
     next()
 
-    expect(screen.getByRole('status').textContent).toContain('All three beta plans are ready')
+    expect(screen.getByRole('status').textContent).toContain('Every listed plan is ready')
     expect(screen.queryByRole('button', { name: /^Set up / })).toBeNull()
   })
 

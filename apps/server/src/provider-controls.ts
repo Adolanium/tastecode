@@ -21,6 +21,7 @@ const loadCodex = retryableLazy(() => import('@harness/adapter-codex'))
 const loadClaude = retryableLazy(() => import('@harness/adapter-claude-code'))
 const loadCursor = retryableLazy(() => import('@harness/adapter-cursor'))
 const loadGrok = retryableLazy(() => import('@harness/adapter-grok'))
+const loadHermes = retryableLazy(() => import('@harness/adapter-hermes'))
 const loadAcp = retryableLazy(() => import('@harness/adapter-acp'))
 
 export type ProviderLoginResult = {
@@ -148,6 +149,10 @@ const defaultServices = {
     account: async () => (await loadGrok()).grokAccount(),
     usageLimitSource: async () => (await loadGrok()).grokLimitSource(),
     signOut: async () => (await loadGrok()).signOutGrok(),
+  },
+  hermes: {
+    account: async () => (await loadHermes()).hermesAccount(),
+    signOut: async () => (await loadHermes()).signOutHermes(),
   },
   acp: {
     account: async (agent) => (agent ? (await loadAcp()).acpAccount(agent) : { signedIn: false }),

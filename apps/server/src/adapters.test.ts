@@ -24,7 +24,8 @@ class FakeTurnAdapter {
     approvals: false,
     images: false,
   }
-  readonly provider: 'grok' | 'antigravity' | 'claude-code' | 'cursor' | 'opencode' | 'codex'
+  readonly provider:
+    'grok' | 'hermes' | 'antigravity' | 'claude-code' | 'cursor' | 'opencode' | 'codex'
   disposed = false
   startOptions: Record<string, unknown> | undefined
   turnOptions: Record<string, unknown> | undefined
@@ -130,7 +131,12 @@ class FakeAcpAdapter extends FakeResumableAdapter {
     readonly agentId: string,
     options?: Record<string, unknown>,
   ) {
-    super('grok', options)
+    const provider = options?.provider
+    super(provider === 'hermes' || provider === 'grok' ? provider : 'grok', options)
+  }
+
+  sessionModels(): never[] {
+    return []
   }
 
   setApproval(): void {}
@@ -181,6 +187,19 @@ vi.mock('@harness/adapter-opencode', () => ({
 vi.mock('@harness/adapter-grok', () => ({
   GrokAdapter: FakeGrokAdapter,
   grokCommand: () => 'grok',
+}))
+vi.mock('@harness/adapter-hermes', () => ({
+  hermesCommand: () => 'hermes',
+  HERMES_ACP_ARGS: ['acp', '--accept-hooks'],
+  discoverHermesModels: async () => [
+    {
+      id: 'nous:z-ai/glm-5.3-flash',
+      displayName: 'nous · z-ai/glm-5.3-flash',
+      isDefault: true,
+      reasoningEfforts: [],
+      serviceTiers: [],
+    },
+  ],
 }))
 vi.mock('@harness/adapter-acp', () => ({
   AcpAdapter: FakeAcpAdapter,
@@ -425,6 +444,43 @@ describe('one-shot provider turn options', () => {
       args: ['agent', '--model', 'grok-4.6', '--reasoning-effort', 'xhigh', 'stdio'],
       mcpServers: [{ name: 'test-tools' }],
     })
+  })
+
+  it('starts Hermes through ACP with the configured model', async () => {
+    const runtime = providerRuntime('hermes', () => {})
+    const { thread } = await runtime.start('/repo', {
+      model: 'nous:z-ai/glm-5.3-flash',
+      mcpServers: [
+        {
+          id: 'test-tools',
+          enabled: true,
+          transport: { type: 'stdio', command: 'node', args: ['test-mcp.js'] },
+        },
+      ],
+    })
+
+    expect(thread.provider).toBe('hermes')
+    expect(turnAdapters).toHaveLength(1)
+    expect(turnAdapters[0]).toBeInstanceOf(FakeAcpAdapter)
+    expect(turnAdapters[0]?.launchOptions).toMatchObject({
+      provider: 'hermes',
+      args: ['acp', '--accept-hooks'],
+      mcpServers: [{ name: 'test-tools' }],
+    })
+    expect(turnAdapters[0]?.startOptions).toMatchObject({ model: 'nous:z-ai/glm-5.3-flash' })
+  })
+
+  it('lists Hermes models from the configured catalog', async () => {
+    const runtime = providerRuntime('hermes', () => {})
+    await expect(runtime.listModels()).resolves.toEqual([
+      {
+        id: 'nous:z-ai/glm-5.3-flash',
+        displayName: 'nous · z-ai/glm-5.3-flash',
+        isDefault: true,
+        reasoningEfforts: [],
+        serviceTiers: [],
+      },
+    ])
   })
 
   it('resumes Grok with separate TasteCode and provider session identities', async () => {

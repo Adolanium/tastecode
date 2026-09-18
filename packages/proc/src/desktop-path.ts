@@ -75,6 +75,7 @@ function extraDirectories(
       env.APPDATA ? join(env.APPDATA, 'npm') : undefined,
       env.LOCALAPPDATA ? join(env.LOCALAPPDATA, 'Microsoft', 'WindowsApps') : undefined,
       env.LOCALAPPDATA ? join(env.LOCALAPPDATA, 'pnpm') : undefined,
+      env.LOCALAPPDATA ? join(env.LOCALAPPDATA, 'hermes', 'bin') : undefined,
       ...userBins,
       join(home, 'scoop', 'shims'),
       env.ProgramData ? join(env.ProgramData, 'chocolatey', 'bin') : undefined,
@@ -82,6 +83,7 @@ function extraDirectories(
   }
   return [
     ...userBins,
+    join(home, '.hermes', 'bin'),
     platform === 'darwin' ? join(home, 'Library', 'pnpm', 'bin') : undefined,
     '/opt/homebrew/bin',
     '/usr/local/bin',

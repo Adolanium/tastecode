@@ -4,6 +4,7 @@ export type ProviderMark =
   | 'openai'
   | 'anthropic'
   | 'grok'
+  | 'hermes'
   | 'cursor'
   | 'opencode'
   | 'openrouter'
@@ -25,6 +26,7 @@ const PROVIDERS = {
   codex: { label: 'Codex', mark: 'openai' },
   'claude-code': { label: 'Claude Code', mark: 'anthropic' },
   grok: { label: 'Grok', mark: 'grok' },
+  hermes: { label: 'Hermes', mark: 'hermes' },
   cursor: { label: 'Cursor', mark: 'cursor' },
   opencode: { label: 'OpenCode', mark: 'opencode' },
   antigravity: { label: 'Antigravity', mark: 'antigravity' },

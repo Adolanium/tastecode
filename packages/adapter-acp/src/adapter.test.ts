@@ -3,7 +3,12 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { acpPromptContent, parseAcpThreadId, prepareAcpMcpServers } from './adapter.js'
+import {
+  acpPromptContent,
+  modelsFromAcpSession,
+  parseAcpThreadId,
+  prepareAcpMcpServers,
+} from './adapter.js'
 import {
   LISTED_AGENTS,
   acpAccount,
@@ -172,6 +177,44 @@ describe('ACP MCP configuration', () => {
         {},
       ),
     ).toThrow('cannot use a custom cwd through ACP')
+  })
+})
+
+describe('ACP session model catalog', () => {
+  it('maps Hermes-style session/new models onto TasteCode rows', () => {
+    expect(
+      modelsFromAcpSession({
+        sessionId: 'sess-1',
+        models: {
+          currentModelId: 'nous:z-ai/glm-5.3-flash',
+          availableModels: [
+            { modelId: 'nous:z-ai/glm-5.3-flash', name: 'Nous Portal · z-ai/glm-5.3-flash' },
+            {
+              modelId: 'deepseek:deepseek-flash',
+              name: 'deepseek-flash',
+              description: 'Provider: DeepSeek',
+            },
+            { modelId: '  ' },
+          ],
+        },
+      }),
+    ).toEqual([
+      {
+        id: 'nous:z-ai/glm-5.3-flash',
+        displayName: 'Nous Portal · z-ai/glm-5.3-flash',
+        isDefault: true,
+        reasoningEfforts: [],
+        serviceTiers: [],
+      },
+      {
+        id: 'deepseek:deepseek-flash',
+        displayName: 'deepseek-flash',
+        description: 'Provider: DeepSeek',
+        isDefault: false,
+        reasoningEfforts: [],
+        serviceTiers: [],
+      },
+    ])
   })
 })
 

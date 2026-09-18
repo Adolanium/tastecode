@@ -34,6 +34,7 @@ const isProviderId = enumValidator<ProviderId>({
   codex: true,
   'claude-code': true,
   grok: true,
+  hermes: true,
   cursor: true,
   opencode: true,
   antigravity: true,

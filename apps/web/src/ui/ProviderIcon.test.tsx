@@ -8,6 +8,7 @@ const MARKS: ProviderMark[] = [
   'openai',
   'anthropic',
   'grok',
+  'hermes',
   'cursor',
   'opencode',
   'openrouter',
@@ -22,7 +23,7 @@ const MARKS: ProviderMark[] = [
 ]
 
 /** Marks with real brand artwork must not fall through to the generic glyph. */
-const BRANDED: ProviderMark[] = ['grok', 'antigravity', 'pi']
+const BRANDED: ProviderMark[] = ['grok', 'hermes', 'antigravity', 'pi']
 
 describe('ProviderIcon', () => {
   it.each(MARKS)('renders %s as vector artwork', (mark) => {

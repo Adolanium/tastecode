@@ -834,6 +834,7 @@ export class Orchestrator {
           ['codex', 'Codex'],
           ['claude-code', 'Claude Code'],
           ['grok', 'Grok'],
+          ['hermes', 'Hermes'],
         ] as const
       ).map(async ([provider, displayName]) => {
         try {

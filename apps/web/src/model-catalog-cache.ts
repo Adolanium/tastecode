@@ -10,6 +10,7 @@ const PROVIDER_MARKS = new Set<ProviderMark>([
   'openai',
   'anthropic',
   'grok',
+  'hermes',
   'cursor',
   'opencode',
   'openrouter',
@@ -278,6 +279,7 @@ function parseProviderId(value: unknown): ProviderId | undefined {
     value === 'codex' ||
     value === 'claude-code' ||
     value === 'grok' ||
+    value === 'hermes' ||
     value === 'cursor' ||
     value === 'opencode' ||
     value === 'antigravity' ||

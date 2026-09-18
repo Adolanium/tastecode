@@ -1,5 +1,6 @@
 export {
   AcpAdapter,
+  modelsFromAcpSession,
   parseAcpThreadId,
   prepareAcpMcpServers,
   type AcpLaunchOptions,

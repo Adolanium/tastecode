@@ -501,6 +501,34 @@
           </li>
         </ul>
 
+        <h3>Hermes Agent (`hermes acp`)</h3>
+        <ul class="check">
+          <li>
+            <label
+              ><input type="checkbox" /><span
+                >Hermes runs as a first-class provider through the shared ACP adapter
+                <span class="d"
+                  >launch is `hermes acp --accept-hooks`; session/set_model applies the picker
+                  choice; the catalog is Hermes's ACP session model list, falling back to
+                  `hermes config get` of the configured default, named providers, and aliases;
+                  credential files are never read</span>
+                ></span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" /><span
+                >Resume, interrupt, approvals, and image prompts follow ACP capabilities
+                <span class="d"
+                  >TasteCode does not read `auth.json`; signed-in state comes from `hermes auth
+                  list` labels, and sign-out runs `hermes logout`</span
+                ></span
+              ></label
+            >
+          </li>
+        </ul>
+
         <h3>Grok (grok CLI, streaming-json)</h3>
         <ul class="check">
           <li>
@@ -621,7 +649,7 @@
               ><input type="checkbox" /><span
                 >One fixed setup and account row grammar
                 <span class="d"
-                  >Codex, Claude Code, and Grok keep mark, identity, status, issue, and actions in
+                  >Codex, Claude Code, Grok, and Hermes keep mark, identity, status, issue, and actions in
                   stable slots across loading, ready, setup, busy, and failure states; empty action
                   slots stay hidden, with account details below the provider name in compact rows;
                   primary and secondary actions share the right edge on desktop and narrow layouts;
@@ -653,7 +681,7 @@
               ><input type="checkbox" /><span
                 >Provider update buttons and release notifications
                 <span class="d"
-                  >background checks for Codex, Claude Code, and Grok; a compact Providers footer
+                  >background checks for Codex, Claude Code, Grok, and Hermes; a compact Providers footer
                   reopens available updates. The toast shows versions, runs trusted update commands,
                   and handles progress, verified completion, retry, terminal details, and managed
                   install guides. Idle toasts close after 5 seconds, pausing on hover or focus and

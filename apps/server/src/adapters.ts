@@ -1,3 +1,4 @@
+import type { AcpAdapter } from '@harness/adapter-acp'
 import type { ClaudeCodeAdapter } from '@harness/adapter-claude-code'
 import type { GrokAdapter } from '@harness/adapter-grok'
 import type {
@@ -15,6 +16,7 @@ import type {
   StoredModelConnection,
   Thread,
 } from '@harness/contracts'
+import { tmpdir } from 'node:os'
 import { createApiWorkspaceTools } from './api-workspace-tools.js'
 import {
   actionableLaunchError,
@@ -33,6 +35,7 @@ const loadClaudeAdapter = retryableLazy(() => import('@harness/adapter-claude-co
 const loadCodexAdapter = retryableLazy(() => import('@harness/adapter-codex'))
 const loadCursorAdapter = retryableLazy(() => import('@harness/adapter-cursor'))
 const loadGrokAdapter = retryableLazy(() => import('@harness/adapter-grok'))
+const loadHermesAdapter = retryableLazy(() => import('@harness/adapter-hermes'))
 const loadOpenCodeAdapter = retryableLazy(() => import('@harness/adapter-opencode'))
 const loadPiAdapter = retryableLazy(() => import('@harness/adapter-pi'))
 
@@ -223,6 +226,8 @@ export function providerRuntime(
       return antigravityRuntime(onLog, resolveHarness)
     case 'grok':
       return grokRuntime(onLog, resolveHarness)
+    case 'hermes':
+      return hermesRuntime(onLog, resolveHarness)
     case 'pi':
       return piRuntime(onLog, resolveHarness)
     default:
@@ -263,6 +268,7 @@ const CUSTOM_HARNESS_PROTOCOL_LABELS = {
   codex: 'Codex app-server',
   'claude-code': 'Claude Code stream JSON',
   grok: 'Grok streaming JSON',
+  hermes: 'ACP',
   cursor: 'Cursor stream JSON',
   opencode: 'OpenCode HTTP server',
   antigravity: 'Antigravity stream JSON',
@@ -388,6 +394,7 @@ async function probeCustomHarnessProtocol(
         await adapter.dispose()
       }
     }
+    case 'hermes':
     case 'acp': {
       const { AcpAdapter } = await loadAcpAdapter()
       const adapter = new AcpAdapter(harness.id, {
@@ -395,6 +402,7 @@ async function probeCustomHarnessProtocol(
         command: harness.command,
         args: [],
         spawn,
+        ...(harness.provider === 'hermes' ? { provider: 'hermes' as const } : {}),
       })
       adapter.on('log', onLog)
       try {
@@ -640,6 +648,95 @@ function grokRuntime(
       return new GrokAdapter(harness ? { spawn: customHarnessSpawn(harness) } : {}).listModels()
     },
   }
+}
+
+function hermesRuntime(
+  onLog: (line: string) => void,
+  resolveHarness: (id: string) => CustomHarness | undefined,
+): ProviderRuntime {
+  const adapterFor = async (harness: CustomHarness | undefined, options: StartOptions) => {
+    const [{ AcpAdapter, prepareAcpMcpServers }, { hermesCommand, HERMES_ACP_ARGS }] =
+      await Promise.all([loadAcpAdapter(), loadHermesAdapter()])
+    return new AcpAdapter('hermes', {
+      name: harness?.displayName ?? 'Hermes',
+      command: hermesCommand(),
+      args: [...HERMES_ACP_ARGS],
+      provider: 'hermes',
+      mcpServers: prepareAcpMcpServers(options.mcpServers ?? [], options.mcpCredentials ?? {}),
+      ...(harness ? { spawn: customHarnessSpawn(harness) } : {}),
+    })
+  }
+
+  const open = async (workspacePath: string, options: StartOptions, threadId?: string) => {
+    const harness = harnessFor('hermes', options.agent, resolveHarness)
+    const adapter = await adapterFor(harness, options)
+    adapter.on('log', onLog)
+    return startedSession(adapter, async () => {
+      const selection = {
+        approval: options.approval,
+        model: options.model,
+        instructions: options.instructions,
+      }
+      const opening =
+        threadId === undefined
+          ? adapter.startThread(workspacePath, selection)
+          : adapter.resumeThread(threadId, workspacePath, selection)
+      return harness
+        ? await customHarnessOperation(
+            harness,
+            threadId === undefined
+              ? 'complete the ACP session handshake'
+              : 'resume the ACP session',
+            opening,
+          )
+        : await opening
+    })
+  }
+
+  return {
+    start: open,
+    resume: (threadId, workspacePath, options) => open(workspacePath, options, threadId),
+    async listModels(agent) {
+      return listHermesModels(onLog, harnessFor('hermes', agent, resolveHarness), adapterFor)
+    },
+  }
+}
+
+const hermesModelListings = new Map<string, Promise<Model[]>>()
+
+function listHermesModels(
+  onLog: (line: string) => void,
+  harness: CustomHarness | undefined,
+  adapterFor: (harness: CustomHarness | undefined, options: StartOptions) => Promise<AcpAdapter>,
+): Promise<Model[]> {
+  const key = harness?.id ?? 'default'
+  const existing = hermesModelListings.get(key)
+  if (existing) return existing
+  const listing = (async () => {
+    const { discoverHermesModels, hermesCommand } = await loadHermesAdapter()
+    const configured = discoverHermesModels({
+      command: harness?.command ?? hermesCommand(),
+      ...(harness ? { run: customHarnessRun(harness) } : {}),
+    })
+    const adapter = await adapterFor(harness, {})
+    adapter.on('log', onLog)
+    try {
+      const starting = adapter.startThread(tmpdir(), {})
+      if (harness) await customHarnessOperation(harness, 'list models', starting)
+      else await starting
+      const live = adapter.sessionModels()
+      if (live.length > 0) return live
+      return await configured
+    } catch {
+      return await configured
+    } finally {
+      await adapter.dispose()
+    }
+  })().finally(() => {
+    hermesModelListings.delete(key)
+  })
+  hermesModelListings.set(key, listing)
+  return listing
 }
 
 function antigravityRuntime(

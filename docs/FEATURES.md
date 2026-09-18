@@ -55,6 +55,7 @@ build it. This exists so nothing gets forgotten and so we can argue about scope 
 - [ ] `v1` Claude Code subscription
 - [ ] `v1` Codex / ChatGPT subscription
 - [ ] `v1` Cursor Agent
+- [ ] `v1` Hermes Agent
 - [ ] `v1` OpenCode agent
 - [ ] `v1` Kimi Code
 - [ ] `v1` GLM / Z.ai coding plan
