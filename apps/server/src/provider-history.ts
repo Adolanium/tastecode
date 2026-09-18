@@ -332,17 +332,30 @@ export function importedEvents(
 }
 
 function sameUserMessage(left: Item, right: Item): boolean {
-  let text = right.text
-  // Native logs contain our Design follow-up envelope; local history keeps only
-  // the user's submission. Unwrap solely for echo matching, never arbitrary prose.
-  if (text?.startsWith('This is an ordinary user turn, not an active TasteCode Design phase. ')) {
-    const marker = '\n\nUser request:\n'
-    const start = text.indexOf(marker)
-    if (start !== -1) text = text.slice(start + marker.length)
-  }
+  const text = unwrapImportedUserText(right.text)
   return (
     (left.text === right.text || left.text === text) &&
     Math.abs(left.createdAt - right.createdAt) < 60_000 &&
     JSON.stringify(left.attachments ?? []) === JSON.stringify(right.attachments ?? [])
   )
+}
+
+/** Native logs contain TasteCode prompt envelopes; local history keeps only the
+ *  user's submission. Unwrap solely for echo matching, never arbitrary prose. */
+function unwrapImportedUserText(text: string | undefined): string | undefined {
+  if (!text) return text
+  if (text.startsWith('<user_query>\n') && text.endsWith('\n</user_query>')) {
+    text = text.slice('<user_query>\n'.length, -'\n</user_query>'.length)
+  }
+  if (text.startsWith('<system-instructions>\n')) {
+    const marker = '\n</system-instructions>\n\n'
+    const start = text.indexOf(marker)
+    if (start !== -1) text = text.slice(start + marker.length)
+  }
+  if (text.startsWith('This is an ordinary user turn, not an active TasteCode Design phase. ')) {
+    const marker = '\n\nUser request:\n'
+    const start = text.indexOf(marker)
+    if (start !== -1) text = text.slice(start + marker.length)
+  }
+  return text
 }
