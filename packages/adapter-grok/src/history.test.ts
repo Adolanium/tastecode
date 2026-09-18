@@ -408,6 +408,56 @@ describe('Grok native history', () => {
     )
   })
 
+  it('strips TasteCode instruction prefixes and Grok user_query wrappers from user text', async () => {
+    const prompt = 'What can you tell me about the current project?'
+    const wrapped =
+      '<system-instructions>\nWrite like a clear, capable teammate.\n\n- Lead with the useful answer or outcome.\n</system-instructions>\n\n' +
+      prompt
+    const { source, directory } = await fixture()
+    await save(directory, 'updates.jsonl', [
+      update('user_message_chunk', {
+        content: { type: 'text', text: wrapped },
+        _meta: { promptIndex: 0 },
+      }),
+      update(
+        'agent_message_chunk',
+        { content: { type: 'text', text: 'Paste is a sharing site.' } },
+        1,
+        'native-turn-1',
+      ),
+      update('turn_completed', { prompt_id: 'native-turn-1', stop_reason: 'end_turn' }, 2),
+    ])
+    const [session] = await source.list()
+    expect(items(await source.read(session!))).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ role: 'user', text: prompt }),
+        expect.objectContaining({ role: 'assistant', text: 'Paste is a sharing site.' }),
+      ]),
+    )
+    expect(JSON.stringify(await source.read(session!))).not.toContain('<system-instructions>')
+
+    const chatOnly = await fixture('chat-only')
+    await save(chatOnly.directory, 'chat_history.jsonl', [
+      { type: 'system', content: 'internal system text' },
+      {
+        type: 'user',
+        content: [{ type: 'text', text: `<user_query>\n${wrapped}\n</user_query>` }],
+        prompt_index: 0,
+      },
+      { type: 'assistant', content: 'Paste is a sharing site.' },
+    ])
+    const [chatSession] = await chatOnly.source.list()
+    expect(items(await chatOnly.source.read(chatSession!))).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ role: 'user', text: prompt }),
+        expect.objectContaining({ role: 'assistant', text: 'Paste is a sharing site.' }),
+      ]),
+    )
+    expect(JSON.stringify(await chatOnly.source.read(chatSession!))).not.toMatch(
+      /<system-instructions>|<user_query>/,
+    )
+  })
+
   it('returns empty for absent stores and refuses locators outside the provider store', async () => {
     const { source, directory, root } = await fixture()
     await save(directory, 'updates.jsonl', [
