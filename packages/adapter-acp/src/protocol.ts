@@ -47,6 +47,20 @@ export const InitializeResultSchema = z.object({
 
 export const NewSessionResultSchema = z.object({
   sessionId: z.string().optional(),
+  models: z
+    .object({
+      currentModelId: z.string().optional(),
+      availableModels: z
+        .array(
+          z.object({
+            modelId: z.string().optional(),
+            name: z.string().optional(),
+            description: z.string().nullable().optional(),
+          }),
+        )
+        .optional(),
+    })
+    .optional(),
   modes: z
     .object({
       currentModeId: z.string().optional(),

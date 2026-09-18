@@ -12,6 +12,7 @@ describe('provider presentation', () => {
     ['codex', 'Codex', 'openai'],
     ['claude-code', 'Claude Code', 'anthropic'],
     ['grok', 'Grok', 'grok'],
+    ['hermes', 'Hermes', 'hermes'],
     ['cursor', 'Cursor', 'cursor'],
     ['opencode', 'OpenCode', 'opencode'],
     ['antigravity', 'Antigravity', 'antigravity'],

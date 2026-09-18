@@ -46,7 +46,7 @@ describe('detectProviders', () => {
     const second = detectProviders(sharedSystem)
     expect(first).toBe(second)
     await Promise.resolve()
-    expect(installedChecks).toBe(3)
+    expect(installedChecks).toBe(4)
 
     release()
     await Promise.all([first, second])
@@ -64,11 +64,11 @@ describe('detectProviders', () => {
     const prewarmed = prewarmProviders(sharedSystem)
     expect(prewarmProviders(sharedSystem)).toBe(prewarmed)
     await prewarmed
-    expect(installedChecks).toBe(3)
+    expect(installedChecks).toBe(4)
 
     expect(detectProviders(sharedSystem)).toBe(prewarmed)
     await detectProviders(sharedSystem)
-    expect(installedChecks).toBe(6)
+    expect(installedChecks).toBe(8)
   })
 
   it('refreshes a prewarmed scan that waited too long for its first reader', async () => {
@@ -86,7 +86,7 @@ describe('detectProviders', () => {
     vi.setSystemTime(30_001)
     await detectProviders(sharedSystem)
 
-    expect(installedChecks).toBe(6)
+    expect(installedChecks).toBe(8)
   })
 
   it('reports an installed provider with the version it gave us', async () => {
@@ -125,6 +125,9 @@ describe('detectProviders', () => {
       'https://code.claude.com/docs/en/getting-started',
     )
     expect(find(providers, 'grok').setup?.installUrl).toBe('https://x.ai/cli')
+    expect(find(providers, 'hermes').setup?.installUrl).toBe(
+      'https://hermes-agent.nousresearch.com/docs/getting-started/installation',
+    )
   })
 
   it('omits the version when the binary would not say', async () => {
@@ -159,7 +162,12 @@ describe('detectProviders', () => {
   it('reports every provider we know about, installed or not', async () => {
     const providers = await detectProviders(system())
 
-    expect(providers.map((entry) => entry.id).sort()).toEqual(['claude-code', 'codex', 'grok'])
+    expect(providers.map((entry) => entry.id).sort()).toEqual([
+      'claude-code',
+      'codex',
+      'grok',
+      'hermes',
+    ])
   })
 })
 
@@ -179,6 +187,7 @@ describe('install command resolution', () => {
   it('refuses targets it cannot script instead of guessing', async () => {
     // Grok ships its own installer; there is no command worth running blind.
     await expect(installCommandFor('grok')).rejects.toThrow(/no scripted install/)
+    await expect(installCommandFor('hermes')).rejects.toThrow(/no scripted install/)
     await expect(installCommandFor('acp', 'nonexistent')).rejects.toThrow(/unknown install target/)
     await expect(installCommandFor('acp')).rejects.toThrow(/unknown install target/)
   })
@@ -192,6 +201,7 @@ describe('sign-in launch command resolution', () => {
     await expect(launchCommandFor('codex')).resolves.toBe('codex login')
     await expect(launchCommandFor('claude-code')).resolves.toBe('claude auth login')
     await expect(launchCommandFor('grok')).resolves.toBe('grok login')
+    await expect(launchCommandFor('hermes')).resolves.toBe('hermes setup')
   })
 
   it('refuses unknown launch targets', async () => {

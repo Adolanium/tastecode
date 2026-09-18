@@ -276,7 +276,7 @@ function harness(
     async listModels() {
       return []
     },
-    ...(provider === 'codex' || provider === 'grok'
+    ...(provider === 'codex' || provider === 'grok' || provider === 'hermes'
       ? {
           async resume(threadId: string, workspacePath: string, options: StartOptions) {
             resumedIds.push(threadId)

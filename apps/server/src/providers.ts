@@ -2,6 +2,7 @@ import { codexLoginStatus } from '@harness/adapter-codex/auth'
 import { CLAUDE_CAPABILITIES } from '@harness/adapter-claude-code/capabilities'
 import { CODEX_CAPABILITIES } from '@harness/adapter-codex/capabilities'
 import { GROK_CAPABILITIES } from '@harness/adapter-grok/capabilities'
+import { HERMES_CAPABILITIES, HERMES_SUPPORTED_VERSION } from '@harness/adapter-hermes/capabilities'
 import { CODEX_UPDATES } from '@harness/adapter-codex/updates'
 import { CLAUDE_UPDATES } from '@harness/adapter-claude-code/updates'
 import { GROK_UPDATES } from '@harness/adapter-grok/updates'
@@ -80,13 +81,25 @@ const PROBES: Probe[] = [
     // Device flow in the CLI's own terminal, same shape as `kimi login`.
     loginCommand: 'grok login',
   },
+  {
+    id: 'hermes',
+    displayName: 'Hermes',
+    command: 'hermes',
+    capabilities: HERMES_CAPABILITIES,
+    supportedVersion: HERMES_SUPPORTED_VERSION,
+    setup: {
+      installUrl: 'https://hermes-agent.nousresearch.com/docs/getting-started/installation',
+      login: 'provider',
+      loginOpensBrowser: false,
+    },
+    loginCommand: 'hermes setup',
+  },
 ]
 
 /**
- * The public beta ships exactly three subscription plans: Codex, Claude Code
- * and Grok (Leon's release scope, 2026-08-07). The Cursor, OpenCode,
- * Antigravity and ACP adapters stay in the repo fully working and return to
- * this roster after the beta — docs/dashboard.html tracks that list.
+ * The public beta ships Codex, Claude Code, Grok, and Hermes. The Cursor,
+ * OpenCode, Antigravity and ACP adapters stay in the repo fully working and
+ * return to this roster after the beta — docs/dashboard.html tracks that list.
  */
 
 /**

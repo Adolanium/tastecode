@@ -22,6 +22,7 @@
     "@harness/adapter-codex": "workspace:*",
     "@harness/adapter-cursor": "workspace:*",
     "@harness/adapter-grok": "workspace:*",
+    "@harness/adapter-hermes": "workspace:*",
     "@harness/adapter-opencode": "workspace:*",
     "@harness/adapter-pi": "workspace:*",
     "@harness/contracts": "workspace:*",

@@ -63,6 +63,23 @@ describe('desktopPath', () => {
     expect(result.split(path.win32.delimiter)).toContain(path.win32.join(home, '.local', 'bin'))
   })
 
+  it('adds the Hermes installer bin directory', () => {
+    expect(
+      desktopPath('C:\\Windows\\System32', {
+        platform: 'win32',
+        home: 'C:\\Users\\tester',
+        env: { LOCALAPPDATA: 'C:\\Users\\tester\\AppData\\Local' },
+      }).split(path.win32.delimiter),
+    ).toContain(path.win32.join('C:\\Users\\tester\\AppData\\Local', 'hermes', 'bin'))
+    expect(
+      desktopPath('/usr/bin', {
+        platform: 'darwin',
+        home: '/Users/tester',
+        env: {},
+      }).split(path.posix.delimiter),
+    ).toContain(path.posix.join('/Users/tester', '.hermes', 'bin'))
+  })
+
   it('writes the desktop-safe PATH back onto the given environment', () => {
     const home = process.platform === 'win32' ? 'C:\\Users\\tester' : '/Users/tester'
     const env: NodeJS.ProcessEnv = {

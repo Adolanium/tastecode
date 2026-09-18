@@ -870,9 +870,9 @@ export function ProviderSettings(props: {
     )
   }
 
-  // Public beta scope: exactly the three subscription plans the server lists
-  // (Codex, Claude Code, Grok). The ACP agents, Cursor, OpenCode, Antigravity
-  // and API-connection surfaces are parked, not deleted — see AGENTS.md.
+  // Public beta scope: the subscription plans the server lists (Codex, Claude
+  // Code, Grok, Hermes). The ACP agents, Cursor, OpenCode, Antigravity and
+  // API-connection surfaces are parked, not deleted — see AGENTS.md.
   const direct = props.providerStatuses.filter((status) => status.id !== 'acp')
   const byId = (id: ProviderId) => direct.filter((status) => status.id === id)
   const renderProviderRow = (status: ProviderStatus) => (
@@ -889,8 +889,9 @@ export function ProviderSettings(props: {
       {byId('codex').map(renderProviderRow)}
       {byId('claude-code').map(renderProviderRow)}
       {byId('grok').map(renderProviderRow)}
+      {byId('hermes').map(renderProviderRow)}
       {direct
-        .filter((status) => !['codex', 'claude-code', 'grok'].includes(status.id))
+        .filter((status) => !['codex', 'claude-code', 'grok', 'hermes'].includes(status.id))
         .map(renderProviderRow)}
       <ProviderUpdateCheck transport={props.transport} />
     </SettingsPanel>

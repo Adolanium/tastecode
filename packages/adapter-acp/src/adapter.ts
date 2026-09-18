@@ -33,6 +33,7 @@ import {
   RequestPermissionParamsSchema,
   SessionNotificationSchema,
   type InitializeResult,
+  type NewSessionResult,
   type PermissionOptionKind,
   type PromptResult,
   type ContentBlock,
@@ -194,6 +195,7 @@ export class AcpAdapter extends EventEmitter<AcpAdapterEvents> {
   #initialize: InitializeResult | undefined
   #sessionId: string | undefined
   #model: string | undefined
+  #sessionModels: Model[] = []
   #streamer: Streamer | undefined
   #turnCounter = 0
   #instructions: string | undefined
@@ -275,6 +277,7 @@ export class AcpAdapter extends EventEmitter<AcpAdapterEvents> {
       })
     if (!session.sessionId) throw new Error(`${this.#spec.name} started no session`)
     this.#sessionId = session.sessionId
+    this.#sessionModels = modelsFromAcpSession(session)
     await this.#selectSessionModel(options.model)
 
     return {
@@ -396,7 +399,13 @@ export class AcpAdapter extends EventEmitter<AcpAdapterEvents> {
   }
 
   async listModels(): Promise<Model[]> {
-    return discoverAgentModels(this.#spec.id)
+    const discovered = await discoverAgentModels(this.#spec.id)
+    return discovered.length > 0 ? discovered : this.#sessionModels
+  }
+
+  /** Models advertised on session/new. Empty until a session exists. */
+  sessionModels(): Model[] {
+    return this.#sessionModels
   }
 
   /** Complete the ACP initialize handshake without creating a paid session. */
@@ -423,6 +432,7 @@ export class AcpAdapter extends EventEmitter<AcpAdapterEvents> {
     this.#initialize = undefined
     this.#sessionId = undefined
     this.#model = undefined
+    this.#sessionModels = []
     this.#loadSession = false
     this.#pendingApprovals.clear()
     this.#processStop = stopped
@@ -478,11 +488,21 @@ export class AcpAdapter extends EventEmitter<AcpAdapterEvents> {
   }
 
   async #selectSessionModel(model: string | undefined): Promise<void> {
-    if (!model || !this.#spec.modelConfigId || !this.#rpc || !this.#sessionId) return
-    await this.#rpc.request('session/set_config_option', {
+    if (!model || !this.#rpc || !this.#sessionId) return
+    if (this.#spec.modelConfigId) {
+      await this.#rpc.request('session/set_config_option', {
+        sessionId: this.#sessionId,
+        configId: this.#spec.modelConfigId,
+        value: model,
+      })
+      return
+    }
+    // Launch-flag agents already applied `--model`. Everyone else, including
+    // Hermes, uses the ACP session/set_model method.
+    if (this.#spec.modelArg) return
+    await this.#rpc.request('session/set_model', {
       sessionId: this.#sessionId,
-      configId: this.#spec.modelConfigId,
-      value: model,
+      modelId: model,
     })
   }
 
@@ -653,6 +673,27 @@ export class AcpAdapter extends EventEmitter<AcpAdapterEvents> {
             : 'completed',
     })
   }
+}
+
+export function modelsFromAcpSession(session: NewSessionResult): Model[] {
+  const available = session.models?.availableModels ?? []
+  const current = session.models?.currentModelId?.trim()
+  const models: Model[] = []
+  for (const [index, entry] of available.entries()) {
+    const id = entry.modelId?.trim()
+    if (!id) continue
+    const displayName = entry.name?.trim() || id
+    const description = entry.description?.trim()
+    models.push({
+      id,
+      displayName,
+      ...(description ? { description } : {}),
+      isDefault: current ? id === current : index === 0,
+      reasoningEfforts: [],
+      serviceTiers: [],
+    })
+  }
+  return models
 }
 
 export function parseAcpThreadId(threadId: string, agentId: string): string {

@@ -7,6 +7,7 @@ const MARKS = [
   'openai',
   'anthropic',
   'grok',
+  'hermes',
   'cursor',
   'opencode',
   'antigravity',

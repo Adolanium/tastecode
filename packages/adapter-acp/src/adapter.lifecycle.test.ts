@@ -29,6 +29,7 @@ vi.mock('@harness/proc', async (importOriginal) => ({
 class FakeAcpRpc implements AcpRpc {
   #onServerRequest: ServerRequestHandler = (_method, _params, respond) => respond(null)
   #resolvePrompt: ((result: JsonRpcValue) => void) | undefined
+  readonly calls: Array<{ method: string; params: unknown }> = []
 
   onStderr(): void {}
   onNotification(): void {}
@@ -49,9 +50,10 @@ class FakeAcpRpc implements AcpRpc {
   ): Promise<Result>
   request<Result>(
     method: string,
-    _params: unknown = {},
+    params: unknown = {},
     options: JsonRpcRequestOptions | ParsedJsonRpcRequestOptions<Result> = {},
   ): Promise<JsonRpcValue | undefined | Result> {
+    this.calls.push({ method, params })
     const parse = (value: JsonRpcValue) =>
       'result' in options ? options.result.parse(value) : value
     if (method === 'initialize') {
@@ -62,7 +64,20 @@ class FakeAcpRpc implements AcpRpc {
         }),
       )
     }
-    if (method === 'session/new') return Promise.resolve(parse({ sessionId: 'sess-1' }))
+    if (method === 'session/new') {
+      return Promise.resolve(
+        parse({
+          sessionId: 'sess-1',
+          models: {
+            currentModelId: 'nous:glm-flash',
+            availableModels: [
+              { modelId: 'nous:glm-flash', name: 'Nous · glm-flash' },
+              { modelId: 'deepseek:flash', name: 'deepseek · flash' },
+            ],
+          },
+        }),
+      )
+    }
     if (method === 'session/prompt') {
       return new Promise<JsonRpcValue>((resolve) => {
         this.#resolvePrompt = resolve
@@ -165,5 +180,60 @@ describe('ACP approval lifecycle', () => {
     }
     const asked = events.filter((event) => event.type === 'approval.requested')
     expect(asked).toHaveLength(5)
+  })
+})
+
+describe('ACP session model selection', () => {
+  it('uses session/set_model when the agent has no launch flag or config option', async () => {
+    const current = adapter()
+    await current.startThread('C:\\repo', { model: 'nous:glm-flash' })
+    expect(activeRpc().calls).toContainEqual({
+      method: 'session/set_model',
+      params: { sessionId: 'sess-1', modelId: 'nous:glm-flash' },
+    })
+    expect(activeRpc().calls.some((call) => call.method === 'session/set_config_option')).toBe(
+      false,
+    )
+  })
+
+  it('skips session/set_model when the agent already takes --model at launch', async () => {
+    rpc = new FakeAcpRpc()
+    const current = new AcpAdapter('gemini')
+    await current.startThread('C:\\repo', { model: 'gemini-3-flash-preview' })
+    expect(activeRpc().calls.some((call) => call.method === 'session/set_model')).toBe(false)
+    expect(activeRpc().calls.some((call) => call.method === 'session/set_config_option')).toBe(
+      false,
+    )
+  })
+
+  it('exposes models advertised on session/new', async () => {
+    const current = adapter()
+    await current.startThread('C:\\repo')
+    expect(current.sessionModels()).toEqual([
+      {
+        id: 'nous:glm-flash',
+        displayName: 'Nous · glm-flash',
+        isDefault: true,
+        reasoningEfforts: [],
+        serviceTiers: [],
+      },
+      {
+        id: 'deepseek:flash',
+        displayName: 'deepseek · flash',
+        isDefault: false,
+        reasoningEfforts: [],
+        serviceTiers: [],
+      },
+    ])
+  })
+
+  it('keeps Kimi on session/set_config_option', async () => {
+    rpc = new FakeAcpRpc()
+    const current = new AcpAdapter('kimi')
+    await current.startThread('C:\\repo', { model: 'kimi-code/k3' })
+    expect(activeRpc().calls).toContainEqual({
+      method: 'session/set_config_option',
+      params: { sessionId: 'sess-1', configId: 'model', value: 'kimi-code/k3' },
+    })
   })
 })

@@ -3904,6 +3904,7 @@ function toProviderId(provider: string): ProviderId | undefined {
     case 'codex':
     case 'claude-code':
     case 'grok':
+    case 'hermes':
     case 'cursor':
     case 'opencode':
     case 'antigravity':

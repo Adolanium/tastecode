@@ -123,7 +123,7 @@ lifecycle. Adapters translate _into_ this. Nothing engine-specific leaks past th
 | Tier       | Mechanism                        | Engines                                                                                 | Fidelity                              |
 | ---------- | -------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------- |
 | 1 — Native | Vendor protocol or supported SDK | Codex (`app-server` JSON-RPC), Claude Code (Agent SDK), OpenCode (HTTP), Pi (RPC JSONL) | Full where the protocol exposes it    |
-| 2 — ACP    | Agent Client Protocol over stdio | Gemini CLI + ~25 others                                                                 | Good. One adapter, long tail for free |
+| 2 — ACP    | Agent Client Protocol over stdio | Hermes Agent, Gemini CLI + ~25 others                                                   | Good. One adapter, long tail for free |
 | 3 — CLI    | Headless NDJSON                  | Cursor, Grok                                                                            | Adequate. Version-pinned, fragile     |
 
 Engines can appear in more than one tier. We default to the highest fidelity available, with
@@ -476,3 +476,4 @@ registry entry, which is deliberately a good first outside contribution.
 | 2026-09-08 | Added checkpoint reachability and checkout guards, explicit history maintenance, provider controls, task-state ownership, bounded leases and local Electron performance gates. |
 | 2026-09-15 | Added authenticated repository and upload image previews, isolated SVG rendering, lazy loading, and byte-bounded caches for pull-request Markdown.                             |
 | 2026-09-15 | Dropped the Claude Agent SDK's bundled per-platform CLI from the dependency graph and the desktop package; the adapter always spawns the user's `claude`.                      |
+| 2026-09-18 | Added Hermes Agent as a first-class provider over ACP. The model picker uses Hermes's ACP session catalog, falling back to `hermes config get` of the configured default, named providers, and aliases. |

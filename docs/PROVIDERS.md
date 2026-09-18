@@ -17,6 +17,7 @@ implementation details out of shared contracts and components.
 | Codex subscription     | Codex app-server                                   | Existing native adapter                            |
 | Claude subscription    | Claude Code structured CLI                         | Existing CLI adapter                               |
 | ACP agents             | Agent Client Protocol                              | Existing ACP adapter                               |
+| Hermes Agent           | `hermes acp`                                       | Shared ACP adapter                                 |
 | Cursor                 | `cursor-agent --print --output-format stream-json` | Structured CLI adapter                             |
 | OpenCode               | Local server and generated TypeScript SDK          | Native HTTP/SSE adapter                            |
 | Kimi Code              | Verified `kimi acp` surface                        | Shared ACP adapter                                 |

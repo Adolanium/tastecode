@@ -9,6 +9,7 @@ const ProviderMarkSchema = z.enum([
   'openai',
   'anthropic',
   'grok',
+  'hermes',
   'cursor',
   'opencode',
   'openrouter',
